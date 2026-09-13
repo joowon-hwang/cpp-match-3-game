@@ -33,4 +33,4 @@ private:
 
 	QPointF _pressPos;
 
-};
+}; 
