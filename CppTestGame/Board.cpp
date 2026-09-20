@@ -1,78 +1,220 @@
 #include "Board.h"
-#include "Item.h"
+#include "Consts.h"
 
-Board::Board(QGraphicsScene* scene): _scene(scene), _gen(_device())
-
+Board::Board(QGraphicsScene* scene)
+    : _scene(scene)
+    , _gen(_device())
 {
+    _scene->addItem(&_root);
 
-	_scene->sceneRect().width();
-	_scene->sceneRect().height();
-	
-	_scene->addItem(&_root);
+    _root.setPos(160, 60);
 
-	_root.setPos(Mid_Board_width(), Mid_Board_height());
-	_root.setScale(1.0);
-	_root.setRotation(0);
+    _items.resize(
+        Consts::BOARD_LENGTH,
+        std::vector<Item*>(Consts::BOARD_LENGTH, nullptr)
+    );
 
-	_items.resize(Consts::BOARD_LENGTH, std::vector<QGraphicsPixmapItem*>(Consts::BOARD_LENGTH, nullptr));
-	initBoard();
+    initBoard();
+
+    processMatches();
 }
 
-Board::~Board()
-{
-	auto children = _root.childItems();
-	for (auto* child : children) {
-		delete child;
-	}
-}
-
-int Board::Mid_Board_width() {
-	return ((*_scene).sceneRect().width() - (Consts::BOARD_LENGTH * Consts::TILE_SIZE)) / 2;
-}
-
-int Board::Mid_Board_height() {
-	return ((*_scene).sceneRect().height() - (Consts::BOARD_LENGTH * Consts::TILE_SIZE)) / 2;
-}
-
+Board::~Board() = default;
 
 void Board::initBoard()
 {
-	for (int row = 0; row < Consts::BOARD_LENGTH; row++) {
-		for (int column = 0; column < Consts::BOARD_LENGTH; column++) {
-			addItem(row, column);
-		}
-	}
+    for (int row = 0; row < Consts::BOARD_LENGTH; row++)
+    {
+        for (int column = 0; column < Consts::BOARD_LENGTH; column++)
+        {
+            addItem(row, column);
+        }
+    }
 }
 
 void Board::addItem(int row, int column)
 {
-	std::uniform_int_distribution<int> dis(0, 11);
-	int typeIndex = dis(_gen);
-	std::string pathStr = Consts::paths[typeIndex];
+    std::uniform_int_distribution<int> dis(0, 11);
 
-	// 1. 세로 만든 Item 클래스로 동적 생성 (부모를 _root로 지정)
-	Item* item = new Item(pathStr, row, column, &_root);
+    int typeIndex = dis(_gen);
+    std::string pathStr = Consts::paths[typeIndex];
 
-	// 2. 생성자에서 로드된 이미지를 가져와 격자 크기(TILE_SIZE)에 맞게 조절 후 재설정
-	QPixmap pixmap = item->pixmap();
-	pixmap = pixmap.scaled(Consts::TILE_SIZE, Consts::TILE_SIZE, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-	item->setPixmap(pixmap);
+    Item* item = new Item(
+        this,
+        pathStr,
+        row,
+        column,
+        &_root
+    );
 
-	// 3. 매칭 판별을 위한 데이터 테그 저장
-	item->setData(0, typeIndex);
+    QPixmap pixmap = item->pixmap();
 
-	// 4. 화면 배치 및 2차원 격자 배열에 저장
-	item->setPos(calculatePos(row, column));
-	_items[row][column] = item;
+    pixmap = pixmap.scaled(
+        Consts::TILE_SIZE,
+        Consts::TILE_SIZE,
+        Qt::KeepAspectRatio,
+        Qt::SmoothTransformation
+    );
+
+    item->setPixmap(pixmap);
+    item->setData(0, typeIndex);
+    item->setPos(calculatePos(row, column));
+
+    _items[row][column] = item;
 }
 
 void Board::removeItem(int row, int column)
 {
+    if (row < 0 ||
+        row >= Consts::BOARD_LENGTH ||
+        column < 0 ||
+        column >= Consts::BOARD_LENGTH)
+    {
+        return;
+    }
+
+    if (_items[row][column] == nullptr)
+    {
+        return;
+    }
+
+    delete _items[row][column];
+    _items[row][column] = nullptr;
 }
 
 QPointF Board::calculatePos(int row, int column)
 {
-	qreal x1 = row * Consts::TILE_SIZE;
-	qreal y1 = column * Consts::TILE_SIZE;
-	return QPointF(x1,y1);
+    qreal x = column * Consts::TILE_SIZE;
+    qreal y = row * Consts::TILE_SIZE;
+
+    return QPointF(x, y);
+}
+
+std::set<std::pair<int, int>> Board::findMatches()
+{
+    std::set<std::pair<int, int>> matchedIndices;
+
+    for (int r = 0; r < Consts::BOARD_LENGTH; ++r)
+    {
+        for (int c = 0; c < Consts::BOARD_LENGTH - 2; ++c)
+        {
+            if (_items[r][c] == nullptr ||
+                _items[r][c + 1] == nullptr ||
+                _items[r][c + 2] == nullptr)
+            {
+                continue;
+            }
+
+            int type = _items[r][c]->data(0).toInt();
+
+            if (type == _items[r][c + 1]->data(0).toInt() &&
+                type == _items[r][c + 2]->data(0).toInt())
+            {
+                matchedIndices.insert({ r, c });
+                matchedIndices.insert({ r, c + 1 });
+                matchedIndices.insert({ r, c + 2 });
+            }
+        }
+    }
+
+    for (int c = 0; c < Consts::BOARD_LENGTH; ++c)
+    {
+        for (int r = 0; r < Consts::BOARD_LENGTH - 2; ++r)
+        {
+            if (_items[r][c] == nullptr ||
+                _items[r + 1][c] == nullptr ||
+                _items[r + 2][c] == nullptr)
+            {
+                continue;
+            }
+
+            int type = _items[r][c]->data(0).toInt();
+
+            if (type == _items[r + 1][c]->data(0).toInt() &&
+                type == _items[r + 2][c]->data(0).toInt())
+            {
+                matchedIndices.insert({ r, c });
+                matchedIndices.insert({ r + 1, c });
+                matchedIndices.insert({ r + 2, c });
+            }
+        }
+    }
+
+    return matchedIndices;
+}
+
+void Board::processMatches()
+{
+    std::set<std::pair<int, int>> _matchedIndices = findMatches();
+    for (auto i : _matchedIndices) {
+        removeItem(i.first, i.second);
+    }
+}
+
+void Board::swapItems(int r1, int c1, int r2, int c2)
+{
+    if (r1 < 0 ||
+        r1 >= Consts::BOARD_LENGTH ||
+        c1 < 0 ||
+        c1 >= Consts::BOARD_LENGTH)
+    {
+        return;
+    }
+
+    if (r2 < 0 ||
+        r2 >= Consts::BOARD_LENGTH ||
+        c2 < 0 ||
+        c2 >= Consts::BOARD_LENGTH)
+    {
+        return;
+    }
+
+    if (_items[r1][c1] == nullptr ||
+        _items[r2][c2] == nullptr)
+    {
+        return;
+    }
+
+    std::swap(_items[r1][c1], _items[r2][c2]);
+
+    _items[r1][c1]->setRow(r1);
+    _items[r1][c1]->setColumn(c1);
+
+    _items[r2][c2]->setRow(r2);
+    _items[r2][c2]->setColumn(c2);
+
+    _items[r1][c1]->setPos(calculatePos(r1, c1));
+    _items[r2][c2]->setPos(calculatePos(r2, c2));
+
+    processMatches();
+}
+
+void Board::itemDragEvent(Item* item, Item::Direction direction)
+{
+    int r1 = item->row();
+    int c1 = item->column();
+
+    int r2 = r1;
+    int c2 = c1;
+
+    switch (direction)
+    {
+    case Item::Direction::Up:
+        r2--;
+        break;
+
+    case Item::Direction::Down:
+        r2++;
+        break;
+
+    case Item::Direction::Left:
+        c2--;
+        break;
+
+    case Item::Direction::Right:
+        c2++;
+        break;
+    }
+
+    swapItems(r1, c1, r2, c2);
 }

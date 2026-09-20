@@ -1,42 +1,47 @@
 #pragma once
-#include <random>
-
-#include <QApplication>
-#include <QGraphicsScene>
-#include <QGraphicsView>
-#include <QGraphicsRectItem>
-#include <QTimer>
-
-#include "Consts.h"
 
 #include <vector>
+#include <random>
+#include <set>
+#include <utility>
 
-class Board
+#include <QGraphicsRectItem>
+#include <QGraphicsScene>
+#include <QPointF>
+
+#include "Item.h"
+
+class QGraphicsScene;
+
+class Board : public Item::EventListener
 {
 private:
-	QGraphicsScene* _scene;
-	std::vector<std::vector<QGraphicsPixmapItem*>> _items;
+    QGraphicsScene* _scene;
+    std::vector<std::vector<Item*>> _items;
 
-	std::random_device _device;
+    std::random_device _device;
+    std::mt19937 _gen;
 
-	std::mt19937 _gen;
-
-	QGraphicsRectItem _root;
+    QGraphicsRectItem _root;
 
 public:
-	Board(QGraphicsScene*scene);
-	~Board();
+    Board(QGraphicsScene* scene);
+    ~Board();
 
-	int Mid_Board_width();
+    void initBoard();
 
-	int Mid_Board_height();
+    void addItem(int row, int column);
+    void removeItem(int row, int column);
 
-	void initBoard();
+    QPointF calculatePos(int row, int column);
 
-	void addItem(int row, int column);
-	void removeItem(int row, int column);
+    std::set<std::pair<int, int>> findMatches();
 
-	QPointF calculatePos(int row, int column);
+    void processMatches();
 
-	
+    void swapItems(int r1, int c1, int r2, int c2);
+
+    void itemDragEvent(
+        Item* item,
+        Item::Direction direction) override;
 };

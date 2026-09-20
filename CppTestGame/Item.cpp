@@ -1,73 +1,102 @@
 #include "Item.h"
-#include <cmath>
 
-Item::Item(const std::string& path, int row, int column, QGraphicsItem* parent): 
-QGraphicsPixmapItem(parent),
-_path(path),
-_row(row),
-_column(column)
+#include <cmath>
+#include <QGraphicsSceneMouseEvent>
+
+Item::Item(
+    EventListener* listener,
+    const std::string& path,
+    int row,
+    int column,
+    QGraphicsItem* parent)
+    : QGraphicsPixmapItem(parent)
+    , _listener(listener)
+    , _path(path)
+    , _row(row)
+    , _column(column)
 {
-	setPixmap(QPixmap(QString::fromStdString(_path)));
+    setPixmap(QPixmap(QString::fromStdString(_path)));
 }
 
 std::string Item::path() const
 {
-	return std::string();
+    return _path;
 }
 
 int Item::row() const
 {
-	return _row;
+    return _row;
 }
 
 int Item::column() const
 {
-	return _column;
+    return _column;
 }
 
 void Item::setRow(int row)
 {
-	_row = row;
+    _row = row;
 }
 
 void Item::setColumn(int column)
 {
-	_column = column;
+    _column = column;
 }
 
 void Item::mousePressEvent(QGraphicsSceneMouseEvent* event)
 {
-	qDebug() << "Press";
-	qDebug() << event->scenePos();
-	_pressPos = event->scenePos();
+    _pressPos = event->scenePos();
+    event->accept();
 }
 
 void Item::mouseReleaseEvent(QGraphicsSceneMouseEvent* event)
 {
-	qDebug() << "Release";
+    QPointF releasePos = event->scenePos();
 
-	QPointF releasePos = event->scenePos();
-	qDebug() << releasePos;
+    qreal dx = releasePos.x() - _pressPos.x();
+    qreal dy = releasePos.y() - _pressPos.y();
 
-	qreal dx = releasePos.x() - _pressPos.x();
-	qreal dy = releasePos.y() - _pressPos.y();
+    constexpr qreal threshold = 30.0;
 
-	const qreal threshold = 30.0;
+    Direction direction;
 
-	if (std::abs(dx) >= std::abs(dy)) {
-		if ((dx) >= threshold) {
-			qDebug() << "moved right";
-		}
-		else if ((dx) <= -threshold) {
-			qDebug() << "moved left";
-		}
-	}
-	else {
-		if ((dy) >= threshold) {
-			qDebug() << "moved down";
-		}
-		else if ((dy) <= -threshold) {
-			qDebug() << "moved up";
-		}
-	}
+    if (std::abs(dx) > std::abs(dy))
+    {
+        if (dx > threshold)
+        {
+            direction = Direction::Right;
+        }
+        else if (dx < -threshold)
+        {
+            direction = Direction::Left;
+        }
+        else
+        {
+            event->accept();
+            return;
+        }
+    }
+    else
+    {
+        if (dy > threshold)
+        {
+            direction = Direction::Down;
+        }
+        else if (dy < -threshold)
+        {
+            direction = Direction::Up;
+        }
+        else
+        {
+            event->accept();
+            return;
+        }
+    }
+
+    if (_listener != nullptr)
+    {
+        _listener->itemDragEvent(this, direction);
+    }
+
+    event->accept();
 }
