@@ -63,6 +63,9 @@ void Board::addItem(int row, int column)
     _items[row][column] = item;
 }
 
+
+
+
 void Board::removeItem(int row, int column)
 {
     if (row < 0 ||
@@ -149,6 +152,28 @@ void Board::processMatches()
     for (auto i : _matchedIndices) {
         removeItem(i.first, i.second);
     }
+
+    for (int i = 0; i < Consts::BOARD_LENGTH; i++) {
+        int empty_row = Consts::BOARD_LENGTH - 1;
+        for (int j = Consts::BOARD_LENGTH - 1;j >= 0;j--) {
+            if (_items[j][i] != nullptr) {
+                if (j != empty_row) {
+                    _items[empty_row][i] = _items[j][i];
+                    _items[j][i] = nullptr;
+                    _items[empty_row][i]->setRow(empty_row);
+                    _items[empty_row][i]->setPos(calculatePos(empty_row,i));
+                }
+                empty_row--;
+            }
+        }
+    }
+    if (findMatches().empty()) {
+        
+    }
+    else {
+        processMatches();
+    }
+
 }
 
 void Board::swapItems(int r1, int c1, int r2, int c2)
@@ -174,6 +199,8 @@ void Board::swapItems(int r1, int c1, int r2, int c2)
     {
         return;
     }
+
+
 
     std::swap(_items[r1][c1], _items[r2][c2]);
 

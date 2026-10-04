@@ -14,4 +14,6 @@ A game that is only made recently. Made by an amazing person and is a three-matc
 
 - 오늘 한 일 (Work Done): 아이템이 3개 이상 한줄로 모여있으면 삭제 시키는 것
 - 다음 작업 (Next Step): 빈칸 아래로 정리하기 
-
+### 2026-10-04
+- 오늘 한 일 (Work Done): 빈칸 아래로 정리하기 
+- 다음 작업 (Next Step): 위에 비어있는 칸에 오브잭트 추가
