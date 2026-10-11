@@ -41,6 +41,8 @@ public:
 
     void swapItems(int r1, int c1, int r2, int c2);
 
+    void Bincan();
+
     void itemDragEvent(
         Item* item,
         Item::Direction direction) override;

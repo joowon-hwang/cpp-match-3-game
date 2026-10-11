@@ -167,6 +167,7 @@ void Board::processMatches()
             }
         }
     }
+    Bincan();
     if (findMatches().empty()) {
         
     }
@@ -214,6 +215,17 @@ void Board::swapItems(int r1, int c1, int r2, int c2)
     _items[r2][c2]->setPos(calculatePos(r2, c2));
 
     processMatches();
+}
+
+void Board::Bincan()
+{
+    for (int row = 0; row < Consts::BOARD_LENGTH; row++) {
+        for (int column = 0; column < Consts::BOARD_LENGTH; column++) {
+            if (_items[row][column] == nullptr) {
+                addItem(row, column);
+            }
+        }
+    }
 }
 
 void Board::itemDragEvent(Item* item, Item::Direction direction)
