@@ -23,3 +23,8 @@ A game that is only made recently. Made by an amazing person and is a three-matc
 - 오늘 한 일 (Work Done): 빈칸 채우고 람다 함수 배움
 - 막힌 점 (Blocker): 없음
 - 다음 작업 (Next Step): 애니메이션 적용 
+
+### 2026-10-18
+- 오늘 한 일 (Work Done): 타임라인과 애니매이션 학습
+- 막힌 점 (Blocker): 없음
+- 다음 작업 (Next Step): 애니메이션 적용 
