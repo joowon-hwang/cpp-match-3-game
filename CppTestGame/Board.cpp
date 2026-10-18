@@ -164,7 +164,6 @@ void Board::processMatches()
                     _items[empty_row][i]->setPos(calculatePos(empty_row,i));
                 }
                 empty_row--;
-                empty_row--;
             }
         }
     }
